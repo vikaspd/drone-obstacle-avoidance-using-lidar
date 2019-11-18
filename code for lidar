@@ -1,0 +1,106 @@
+#include <Servo.h>
+void getTFminiData(int* distance, int* strength)  //this gets the value of the distance from the lidar
+{
+  static char i = 0;
+  char j = 0;
+  int checksum = 0; 
+  static int rx[9];
+  if(Serial.available()) {  
+    rx[i] = Serial.read();
+    if(rx[0] != 0x59) {
+      i = 0;
+    } else if(i == 1 && rx[1] != 0x59) {
+      i = 0;
+    } else if(i == 8) {
+      for(j = 0; j < 8; j++) {
+        checksum += rx[j];
+      }
+      if(rx[8] == (checksum % 256)) {
+        *distance = rx[2] + rx[3] * 256;
+        *strength = rx[4] + rx[5] * 256;
+      }
+      i = 0;
+    } else {
+      i++;
+    } 
+  }  
+}
+
+
+Servo esc3;
+                                    // put the LED positive side to pin 5 
+int ch3 = 9;                        // put your throttle input to pin 9 on the arduino
+int ch5 = 7;                         // put your switch input(to enable/disable alti hold)to pin 7 on the arduino
+int throttle_channel = 10;            // put your throttle output to pin 10 on the arduino
+unsigned long alt_hold_switch;
+unsigned long throttle_output;
+
+
+long x;
+void setup() 
+{
+pinMode(5,OUTPUT);
+pinMode(ch3, INPUT); //receiver input
+Serial.begin(115200);
+pinMode(throttle_channel, OUTPUT);
+esc3.attach(10);
+}
+
+
+void loop() 
+{
+ int distance = 0;
+  int strength = 0;
+
+  getTFminiData(&distance, &strength);
+  while(!distance) {
+    getTFminiData(&distance, &strength);
+    if(distance) {
+      Serial.print(distance);
+      Serial.print("cm\t");
+      Serial.println();
+   
+
+x= distance;               
+
+x=map(x,0,200,255,0);      //mapping the intensity of the led as per distance. the number 200 is the distance in centimeter.
+                           // you can change the threshold limit (distance) by changing the value 200 to any height of your choice in centimeters.
+throttle_channel = pulseIn(ch3, HIGH); //channel output
+
+alt_hold_switch = pulseIn(ch5, HIGH); //Read the pos_hold from channel 5
+
+Serial.print("\t throttle:  ");
+Serial.print(throttle_channel);
+Serial.println();
+esc3.writeMicroseconds(throttle_channel);
+
+if (alt_hold_switch < 1500) // Pulse for switching the altitude hold function
+  {
+
+if(x<255 && x>100)            
+{
+ analogWrite(5,x);
+ throttle_channel =throttle_channel+x;
+ 
+ esc3.writeMicroseconds(throttle_channel);
+ Serial.print("\t tThrottle channel: ");
+ Serial.print(throttle_channel);
+ Serial.println();
+}
+
+  if(x<255 && x>10)
+ {
+  throttle_channel = 1490;
+
+  }
+ else if (x<10) 
+  {
+   analogWrite(5,0);
+  }
+   else 
+   {
+     analogWrite(5,0);
+   }
+}
+}
+  }  }
