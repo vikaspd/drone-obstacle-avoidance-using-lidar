@@ -1,4 +1,4 @@
-# drone-obstacle-avoidance-using-lidar
+# drone-obstacle-avoidance-using-lidar/sonar
 This is a simple arduino code to detect the ground distance and hover the drone at a set distance from the ground with a simple flip switch. And also not allowing the throttle input to be executed if the drone's distance is less than the set threshold limit.
 
 Ive used a TF mini as the distance sensor to calculate the ground distance from the drone, arduino nano/arduino UNO , and a small led to show the distance from the drone to the ground by mapping the intensity with the distance.
