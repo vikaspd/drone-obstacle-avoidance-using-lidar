@@ -1,0 +1,72 @@
+#include <Servo.h>
+Servo esc3;
+
+int ch3 = 9;
+int ch5 = 7;
+int throttle_channel = 10;
+unsigned long alt_hold_switch;
+unsigned long throttle_output;
+
+int triggerpin=12;
+int echopin=13;
+long duration;
+long distance;
+long x;
+void setup() 
+
+{
+pinMode(triggerpin,OUTPUT);
+pinMode(echopin,INPUT);
+pinMode(5,OUTPUT);
+pinMode(ch3, INPUT); //receiver input
+Serial.begin(9600);
+pinMode(throttle_channel, OUTPUT);
+esc3.attach(10);
+}
+
+
+void loop() {
+ // put your main code here, to run repeatedly:
+ 
+digitalWrite(triggerpin,LOW); 
+delayMicroseconds(2);
+digitalWrite(triggerpin,HIGH);
+delayMicroseconds(10);
+digitalWrite(triggerpin,HIGH);
+duration=pulseIn(echopin,HIGH);
+x=(duration/2)/29.1;                //1/29.1=0.034 ~ speed of sound converted into centimeters per microsecond
+Serial.print("Distance :");
+Serial.print(x);
+x=map(x,0,140,255,0);      //mapping the intensity as per distance
+
+throttle_channel = pulseIn(ch3, HIGH); //channel output
+
+alt_hold_switch = pulseIn(ch5, HIGH); //Read the pos_hold from channel 5
+
+Serial.print("\t alt hold: ");
+Serial.print(alt_hold_switch);
+Serial.println();
+esc3.writeMicroseconds(throttle_channel);
+
+if (alt_hold_switch < 1500) // Pulse for switching the altitude hold function
+  {
+
+if(x<255 && x>10)                 //code stability condition
+{
+ analogWrite(5,x);
+ throttle_channel =throttle_channel+x;
+ esc3.writeMicroseconds(throttle_channel);
+ Serial.print("\t tThrottle channel: ");
+ Serial.print(throttle_channel);
+ Serial.println();
+}
+ else if (x<10) 
+  {
+   analogWrite(5,0);
+  }
+   else 
+   {
+     analogWrite(5,0);
+   }
+}
+}
